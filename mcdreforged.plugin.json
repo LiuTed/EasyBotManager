@@ -2,7 +2,7 @@
     "id": "easy_bot_manager",
     "version": "0.1",
     "name": "Easy-to-use Carpet Bot Manager Plugin",
-    "author": "tdliu",
+    "author": "LiuTed",
     "dependencies": {
         "mcdreforged": ">=2.0.0",
         "minecraft_data_api": ">=1.4.0"
