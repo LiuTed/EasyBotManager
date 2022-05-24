@@ -1,0 +1,61 @@
+{
+    "usage.help": "显示此帮助信息",
+    "usage.list": "列出所有Bot",
+    "usage.add": "添加一个Bot，位于<维度>的<位置>，看向<视线方向>",
+    "usage.remove": "删除Bot（不会立即将其移出游戏）",
+    "usage.set": "修改一个Bot的设置",
+    "usage.spawn": "召唤一个或所有Bot",
+    "usage.kill": "移除一个或所有Bot",
+    "usage.refresh": "刷新Bot的在线状态",
+
+    "usage.args.help": "",
+    "usage.args.list": "",
+    "usage.args.add": " <Bot名称> [<位置>|here] [<视线方向>] [<维度>] [<注释>]",
+    "usage.args.remove": " <Bot名称>",
+    "usage.args.set": " <Bot名称> [<位置>|here] [<视线方向>] [<维度>] [<注释>]",
+    "usage.args.spawn": " <Bot名称>|all",
+    "usage.args.kill": " <Bot名称>|all",
+    "usage.args.refresh": "",
+
+    "coord.hover.click_to_teleport": "点击以传送到",
+
+    "dim.minecraft:the_end": "末地",
+    "dim.minecraft:overworld": "主世界",
+    "dim.minecraft:the_nether": "下界",
+
+    "ebm.usage.refresh.hover": "点击刷新",
+    "ebm.usage.list.hover": "点击列出所有Bot",
+
+    "ebm.list.online": "在线",
+    "ebm.list.offline": "离线",
+    "ebm.list.looking": " 看向: ",
+    "ebm.list.spawn": "召唤该Bot",
+    "ebm.list.kick": "下线该Bot",
+    "ebm.list.set": "将该Bot设置到这里",
+    "ebm.list.remove": "删除该Bot",
+    "ebm.list.comment": "注释: ",
+    "ebm.list.no_bot": "无Bot记录",
+    "ebm.list.no_matching": "没有符合条件的Bot",
+
+    "ebm.add.invalid_name_all": "'all'不能被用作Bot名",
+    "ebm.add.bot_exist": "Bot {} 已存在",
+    "ebm.add.succeed": "Bot {} 创造成功",
+    "ebm.add.get_info_fail": "无法得到玩家{}的信息",
+    "ebm.add.get_pos_fail": "无法得到玩家{}的位置",
+    "ebm.add.get_view_fail": "无法得到玩家{}的视角",
+    "ebm.add.get_dim_fail": "无法得到玩家{}所在的维度",
+    "ebm.add.need_specify": "非玩家操作时需要指定位置，视角和维度",
+
+    "ebm.remove.online_warning": "Bot {} 仍在线。 ",
+    "ebm.remove.kick_suggest": "[点击使其离线]",
+    "ebm.remove.succeed": "Bot {} 已删除",
+    "ebm.bot_not_found": "Bot {} 未找到",
+
+    "ebm.set.succeed": "Bot {} 已修改.",
+
+    "ebm.spawn.server_not_startup": "请在服务器完全启动后召唤Bot",
+    "ebm.spawn.online": "Bot {} 已在线.",
+    "ebm.kill.server_not_startup": "请在服务器完全启动后下线Bot",
+    "ebm.kill.offline": "Bot {} 已离线."
+    
+}

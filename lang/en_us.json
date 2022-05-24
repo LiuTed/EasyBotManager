@@ -1,0 +1,61 @@
+{
+    "usage.help": "Show this message",
+    "usage.list": "List all Bots",
+    "usage.add": "Add a <Bot> at <pos> looking at <view> in <dim>",
+    "usage.remove": "Remove <Bot> (will NOT kick it from the game)",
+    "usage.set": "Modify settings of <Bot>",
+    "usage.spawn": "Summon <Bot> or all bots",
+    "usage.kill": "Kick <Bot> or all bots from the game",
+    "usage.refresh": "Refresh the online status of bots",
+
+    "usage.args.help": "",
+    "usage.args.list": "",
+    "usage.args.add": " <Bot> [<pos>|here] [<view>] [<dim>] [<comment>]",
+    "usage.args.remove": " <Bot>",
+    "usage.args.set": " <Bot> [<pos>|here] [<view>] [<dim>] [<comment>]",
+    "usage.args.spawn": " <Bot>|all",
+    "usage.args.kill": " <Bot>|all",
+    "usage.args.refresh": "",
+    
+    "coord.hover.click_to_teleport": "Click to teleport to ",
+
+    "dim.minecraft:the_end": "The end",
+    "dim.minecraft:overworld": "Overworld",
+    "dim.minecraft:the_nether": "The nether",
+
+    "ebm.usage.refresh.hover": "Click to refresh.",
+    "ebm.usage.list.hover": "Click to list all bots.",
+
+    "ebm.list.online": "Online",
+    "ebm.list.offline": "Offline",
+    "ebm.list.looking": " Looking at: ",
+    "ebm.list.spawn": "Spawn this bot",
+    "ebm.list.kick": "Kick this bot",
+    "ebm.list.set": "Set this bot here",
+    "ebm.list.remove": "Delete this bot",
+    "ebm.list.comment": "Comment: ",
+    "ebm.list.no_bot": "No bot exists.",
+    "ebm.list.no_matching": "No bot matching the filter.",
+
+    "ebm.add.invalid_name_all": "'all' could not be used as a bot name.",
+    "ebm.add.bot_exist": "Bot {} exists.",
+    "ebm.add.succeed": "Bot {} created.",
+    "ebm.add.get_info_fail": "Cannot get info of player {}",
+    "ebm.add.get_pos_fail": "Cannot get Pos of player {}",
+    "ebm.add.get_view_fail": "Cannot get Rotation of player {}",
+    "ebm.add.get_dim_fail": "Cannot get Dimension of player {}",
+    "ebm.add.need_specify": "Position, Rotation and Dimension need to be specified when executed by non-player.",
+
+    "ebm.remove.online_warning": "Bot {} is still online. ",
+    "ebm.remove.kick_suggest": "[Click to kick it]",
+    "ebm.remove.succeed": "Bot {} removed",
+    "ebm.bot_not_found": "Bot {} not found",
+
+    "ebm.set.succeed": "Bot {} modified.",
+
+    "ebm.spawn.server_not_startup": "Please spawn bot after the server got fully started up.",
+    "ebm.spawn.online": "Bot {} is online.",
+    "ebm.kill.server_not_startup": "Please spawn bot after the server got fully started up.",
+    "ebm.kill.offline": "Bot {} is offline."
+    
+}
