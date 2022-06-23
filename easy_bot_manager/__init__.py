@@ -1,4 +1,4 @@
-from easy_bot_manager.command import MultipleArgument
+from easy_bot_manager.command import *
 from easy_bot_manager.easy_bot_manager import BotManager
 from easy_bot_manager.lang_utils import *
 from mcdreforged.api.command import Literal, Text, GreedyText
@@ -20,34 +20,39 @@ def refresh_server(server):
     botmgr.refresh(server)
     
 @new_thread('EasyBotMgr-List')
-def list(source, cmd):
+def list_bot(source, cmd):
     global botmgr
     return botmgr.list(source, cmd)
 
 @new_thread('EasyBotMgr-Add')
-def add(source, cmd):
+def add_bot(source, cmd):
     global botmgr
     ret = botmgr.add_bot(source, cmd)
     if ret:
         refresh_source(source)
     return ret
     
-def remove(source, cmd):
+def remove_bot(source, cmd):
     global botmgr
     return botmgr.remove_bot(source, cmd)
     
 @new_thread('EasyBotMgr-Set')
-def set(source, cmd):
+def set_bot(source, cmd):
     global botmgr
     return botmgr.set_bot(source, cmd)
+
+@new_thread('EasyBotMgr-Set')
+def remove_bot_comment(source, cmd):
+    global botmgr
+    return botmgr.remove_bot_comment(source, cmd)
     
 @new_thread('EasyBotMgr-Spawn')
-def spawn(source, cmd):
+def spawn_bot(source, cmd):
     global botmgr
     return botmgr.spawn_bot(source, cmd)
     
 @new_thread('EasyBotMgr-Kick')
-def kick(source, cmd):
+def kick_bot(source, cmd):
     global botmgr
     return botmgr.kill_bot(source, cmd)
 
@@ -58,13 +63,18 @@ def name_suggest(filt = 'all'):
 def dim_suggest():
     return ['minecraft:overworld', 'minecraft:the_nether', 'minecraft:the_end']
 
+def list_filter_suggest():
+    return [e.name for e in BotManager.ListArg]
+
 def usage(source):
     subcommand_list = [
         'help',
         'list',
         'add',
-        'remove',
-        'set',
+        'remove1',
+        'remove2',
+        'set1',
+        'set2',
         'spawn',
         'kill',
         'refresh'
@@ -73,7 +83,7 @@ def usage(source):
         for subcommand in subcommand_list:
             raw = RTextList(
                 RText(
-                    '!!bot' + ' {}'.format(subcommand) + tr('usage.args.{}'.format(subcommand)) + ': ',
+                    '!!bot ' + tr('usage.args.{}'.format(subcommand)) + ': ',
                     color = RColor.gray
                 ),
                 RText(
@@ -97,66 +107,112 @@ def usage(source):
 
 
 def register_command(server):
-    from enum import Enum
-    class ListArg(Enum):
-        all = 'all'
-        online = 'online'
-        offline = 'offline'
+    add_comment_node = GreedyText('comment').runs(add_bot)
+
+    add_dim_node = DumbNode('dim').then(
+        Literal('here').runs(add_bot).then(
+            add_comment_node
+        )
+    ).then(
+        Text('dim').suggests(dim_suggest).runs(add_bot).then(
+            add_comment_node
+        )
+    )
+
+    add_view_node = DumbNode('view').then(
+        Literal('here').runs(add_bot).then(
+            add_dim_node
+        )
+    ).then(
+        MultipleArguments('view', 2, float).runs(add_bot).then(
+            add_dim_node
+        )
+    )
+
+    add_pos_node = DumbNode('pos').then(
+        Literal('here').runs(add_bot).then(
+            add_view_node
+        )
+    ).then(
+        MultipleArguments('pos', 3, float).runs(add_bot).then(
+            add_view_node
+        )
+    )
+
+    set_comment_node = GreedyText('comment').runs(set_bot)
+
+    set_dim_node = DumbNode('dim').then(
+        NLRA(
+            'dim',
+            ['keep', 'here'],
+            Text('dim').suggests(dim_suggest)
+        ).runs(set_bot).then(
+            set_comment_node
+        )
+    )
+
+    set_view_node = DumbNode('view').then(
+        NLRA(
+            'view',
+            ['keep', 'here'],
+            MultipleArguments('view', 2, float)
+        ).runs(set_bot).then(
+            set_dim_node
+        )
+    )
+
+    set_pos_node = DumbNode('pos').then(
+        NLRA(
+            'pos',
+            ['keep', 'here'],
+            MultipleArguments('pos', 3, float)
+        ).runs(set_bot).then(
+            set_view_node
+        )
+    )
 
     server.register_command(
         Literal('!!bot').runs(usage).then(
             Literal('help').runs(usage)
         ).then(
-            Literal('list').runs(list).then(
-                Enumeration('filter', ListArg).runs(list)
+            Literal('list').runs(list_bot).then(
+                Enumeration('filter', BotManager.ListArg).runs(list_bot).suggests(list_filter_suggest)
             )
         ).then(
             Literal('add').then(
-                Text('name').runs(add).then(
-                    MultipleArgument('pos', 3, [float, float, float]).runs(add).then(
-                        MultipleArgument('view', 2, [float, float]).runs(add).then(
-                            Text('dim').suggests(dim_suggest).runs(add).then(
-                                GreedyText('comment').runs(add)
-                            )
-                        )
-                    )
+                Text('name').runs(add_bot).then(
+                    add_pos_node
                 ).then(
-                    Literal('here').runs(add).then(
-                        GreedyText('comment').runs(add)
-                    )
+                    add_comment_node
                 )
             )
         ).then(
             Literal('remove').then(
-                Text('name').suggests(lambda: name_suggest()).runs(remove)
+                Text('name').suggests(lambda: name_suggest()).runs(remove_bot).then(
+                    Literal('comment').runs(remove_bot_comment)
+                )
             )
         ).then(
             Literal('set').then(
                 Text('name').suggests(lambda: name_suggest()).then(
-                    Literal('here').runs(set).then(
-                        GreedyText('comment').runs(set)
-                    )
+                    set_pos_node
                 ).then(
-                    MultipleArgument('pos', 3, [float, float, float]).runs(set).then(
-                        MultipleArgument('view', 2, [float, float]).runs(set).then(
-                            Text('dim').suggests(dim_suggest).runs(set).then(
-                                GreedyText('comment').runs(set)
-                            )
-                        )
+                    Literal('comment').then(
+                        GreedyText('comment').runs(set_bot)
                     )
                 )
             )
         ).then(
             Literal('spawn').then(
-                Text('name').suggests(lambda: name_suggest('offline')).runs(spawn)
+                Text('name').suggests(lambda: name_suggest('offline')).runs(spawn_bot)
             ).then(
-                Literal('all').runs(spawn)
+                Literal('all').runs(spawn_bot)
             )
         ).then(
             Literal('kill').then(
-                Text('name').suggests(lambda: name_suggest('online')).runs(kick)
+                Text('name').suggests(lambda: name_suggest('online')).runs(kick_bot)
             ).then(
-                Literal('all').runs(kick)
+                Literal('all').runs(kick_bot)
             )
         ).then(
             Literal('refresh').runs(refresh_source)
@@ -168,7 +224,7 @@ def on_load(server, old):
     botmgr = BotManager()
     botmgr.load(server)
     register_command(server)
-    server.register_help_message('!!bot', 'Manage Carpet Bots')
+    server.register_help_message('!!bot', tr('help_message'))
     if server.is_server_startup():
         refresh_server(server)
 

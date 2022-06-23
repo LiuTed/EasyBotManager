@@ -33,13 +33,13 @@
 !!bot list [all]: 列出所有Bot
 !!bot list [online|offline]: 只列出在线/离线的Bot
 
-!!bot add <bot> [here] [<comment>]: 添加一个名为<bot>的Bot，将其位置与视线设置在玩家处（不可在控制台使用），并为其添加注释<comment>
-!!bot add <bot> <pos> <view> <dim> [<comment>]: 添加一个名为<bot>的Bot，将其位置设置为<dim>维度下的<pos>，将其视线设置为看向<view>，并为其添加注释<comment>。该命令在控制台和游戏内均可使用。如果在游戏内使用，<pos> <view> <dim>均可视情况省略，此时该参数将设置为与玩家当前相同。
+!!bot add <bot> <pos> <view> <dim> [<comment>]: 添加一个名为<bot>的Bot，将其位置设置为<dim>维度下的<pos>，将其视线设置为看向<view>，并为其添加注释<comment>。其中<pos> <view> <dim>既可以是具体的值如'1 64.5 -2.5', '180 -45', 'minecraft:overworld'，也可以是'here'，用来指代玩家当前所在的位置/所看方向/所处维度（缺省值）。注意：如果在控制台输入则不能使用'here'。
 
-!!bot remove <bot>: 删除名为<bot>的Bot
+!!bot remove <bot>：删除名为<bot>的Bot
+!!bot remove <bot> comment: 删除<bot>的注释（不删除<bot>自身）
 
-!!bot set <bot> here [<comment>]: 将名为<bot>的Bot的位置等参数设置到玩家处（不可在控制台使用），如果<comment>存在则修改注释为<comment>
-!!bot set <bot> <pos> <view> <dim> [<comment>]: 将名为<bot>的Bot的位置等参数设置到对应位置，如果<comment>存在则修改注释为<comment>
+!!bot set <bot> <pos> <view> <dim> [<comment>]: 将名为<bot>的Bot的位置等参数设置到对应位置，如果<comment>存在则修改注释为<comment>。<pos> <view> <dim>除了如add中一样可以输入具体值或'here'以外，还可以输入'keep'用来表示不改变该项的值。'keep'可以在输入台中使用（'here'仍然不行）
+!!bot set <bot> comment <comment>: 修改<bot>的注释为<comment>，该注释不应为空。这是'!!bot set <bot> keep keep keep <comment>'的方便版。
 
 !!bot spawn [<bot>|all]: 召唤名为<bot>的Bot上线到对应位置，或召唤全部Bot上线
 !!bot kill [<bot>|all]: 下线名为<bot>的Bot，或下线全部Bot
@@ -51,17 +51,17 @@
 ### 可视化界面
 
 在游戏内输入`!!bot list`后，可以获得如下的Bot列表：
-![example](bot_list.png)
+![example](bot_list_zh.png)
 
 每个Bot一行，以
-`<bot>: <dim>: <pos> Looking at: <view>[☼][☽][☒][▷][?]`
+`<bot>: <dim>: <pos> 看向: <view>[△][▽][☒][▷][?]`
 格式表示
 ```
 "<bot>": Bot名称，绿色为在线，灰色为离线
 "<dim>: <pos>": Bot的维度与位置，不同的维度对应不同的颜色，点击可以生成传送到该位置的tp命令
-"Looking at: <view>": Bot的视线方向
-"[☼]": 点击以召唤该Bot
-"[☽]": 点击以下线该Bot
+"看向: <view>": Bot的视线方向
+"[△]": 点击以召唤该Bot
+"[▽]": 点击以下线该Bot
 "[☒]": 点击以生成删除该Bot的指令，再次按下回车则删除该Bot
 "[▷]": 点击以生成将该Bot的位置等参数设置到当前位置的指令，再次按下回车来确认
 "[?]": 指向该图标来查看对该Bot的注释，灰色为无注释，紫色为有注释

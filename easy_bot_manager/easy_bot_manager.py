@@ -1,16 +1,23 @@
-import json
-
-from mcdreforged.api.command import Literal, IllegalArgument
+from mcdreforged.api.types import CommandSource, PluginServerInterface, ServerInterface
 from easy_bot_manager.lang_utils import *
+from enum import Enum, auto
+from typing import List
 
 class Bot:
-    def __init__(self, name, pos, view, dim, comment='') -> None:
+    def __init__(
+        self,
+        name: str,
+        pos: List[float],
+        view: List[float],
+        dim: str,
+        comment: str = ''
+    ) -> None:
         self.name = name
         self.pos = pos
         self.view = view
         self.dim = dim
         self.comment = comment
-        self.online = False
+        self.online: bool = False
 
     def serialize(self) -> dict:
         ret = {
@@ -30,21 +37,28 @@ class Bot:
         self.comment = bot['comment']
 
 class BotManager:
+    class ListArg(Enum):
+        all = auto()
+        online = auto()
+        offline = auto()
+
     def __init__(self) -> None:
-        self.bots = []
+        self.bots: List['Bot'] = []
     
-    def save(self, server):
-        s = {'bots': [bot.serialize() for bot in self.bots]}
-        server.save_config_simple(s, 'bots.json')
+    def save(self, server: PluginServerInterface):
+        b = {
+            'bots': [bot.serialize() for bot in self.bots]
+        }
+        server.save_config_simple(b, 'bots.json')
     
-    def load(self, server):
-        s = server.load_config_simple('bots.json', {'bots': []})
-        for bot in s['bots']:
+    def load(self, server: PluginServerInterface):
+        lb = server.load_config_simple('bots.json', {'bots': []})
+        for bot in lb['bots']:
             b = Bot(None, None, None, None, '')
             b.deserialize(bot)
             self.bots.append(b)
     
-    def refresh(self, server):
+    def refresh(self, server: ServerInterface):
         api = server.get_plugin_instance('minecraft_data_api')
         players = api.get_server_player_list()
         
@@ -60,13 +74,17 @@ class BotManager:
                 b.online = False
         return
     
-    def list(self, source, cmd):
-        server = source.get_server()
+    def list(self, source: CommandSource, cmd: dict):
         text = ''
+        filt_map = {
+            self.ListArg.all: lambda bot: True,
+            self.ListArg.online: lambda bot: bot.online,
+            self.ListArg.offline: lambda bot: not bot.online
+        }
         if 'filter' in cmd:
-            filt = cmd['filter'].value
+            filt = filt_map[cmd['filter']]
         else:
-            filt = 'all'
+            filt = lambda bot: True
 
         with source.preferred_language_context():
             if len(self.bots) == 0:
@@ -74,7 +92,7 @@ class BotManager:
                 return
             has_output = False
             for bot in self.bots:
-                if (filt == 'all') or (bot.online and filt == 'online') or (bot.online and filt == 'offline'):
+                if filt(bot):
                     text = RTextList(
                         RText(
                             '{}: '.format(bot.name),
@@ -88,7 +106,7 @@ class BotManager:
                             color = RColor.white
                         ),
                         RText(
-                            '[☼]', color=RColor.yellow
+                            '[△]', color=RColor.yellow
                         ).h(
                             tr('ebm.list.spawn')
                         ).c(
@@ -96,7 +114,7 @@ class BotManager:
                             '!!bot spawn {}'.format(bot.name)
                         ),
                         RText(
-                            '[☽]', color=RColor.dark_blue
+                            '[▽]', color=RColor.dark_blue
                         ).h(
                             tr('ebm.list.kick')
                         ).c(
@@ -117,7 +135,7 @@ class BotManager:
                             tr('ebm.list.set')
                         ).c(
                             RAction.suggest_command,
-                            '!!bot set {} here'.format(bot.name)
+                            '!!bot set {} here here here'.format(bot.name)
                         ),
                         RText(
                             '[?]', color=RColor.dark_purple if bot.comment != '' else RColor.gray
@@ -125,12 +143,16 @@ class BotManager:
                             tr('ebm.list.comment') + bot.comment
                         )
                     )
+                    if not source.is_player and bot.comment != '':
+                        text.append(RText(
+                            tr('ebm.list.comment') + bot.comment, color=RColor.dark_purple
+                        ))
                     source.reply(text)
                     has_output = True
             if not has_output:
                 source.reply(tr('ebm.list.no_matching'))
     
-    def bot_name_list(self, filt):
+    def bot_name_list(self, filt: str):
         if filt == 'all':
             return [bot.name for bot in self.bots]
         elif filt == 'online':
@@ -140,7 +162,7 @@ class BotManager:
         else:
             return [bot.name for bot in self.bots]
     
-    def add_bot(self, source, cmd):
+    def add_bot(self, source: CommandSource, cmd: dict):
         name = cmd['name']
         with source.preferred_language_context():
             if name == 'all':
@@ -152,59 +174,49 @@ class BotManager:
                     source.reply(tr('ebm.add.bot_exist', name))
                     return False
 
-        pos = view = dim = None
-        comment = ''
-        if 'pos' in cmd:
-            pos = cmd['pos']
-        if 'view' in cmd:
-            view = cmd['view']
-        if 'dim' in cmd:
-            dim = cmd['dim']
-        if 'comment' in cmd:
-            comment = cmd['comment']
-        
-        if (pos is not None) and (view is not None) and (dim is not None):
-            bot = Bot(name, pos, view, dim, comment)
-            self.bots.append(bot)
+        pos = cmd.get('pos', 'here')
+        view = cmd.get('view', 'here')
+        dim = cmd.get('dim', 'here')
+        comment = cmd.get('comment', '')
+
+        if 'here' in [pos, view, dim]:
             with source.preferred_language_context():
-                source.reply(tr('ebm.add.succeed', name))
-            return True
-
-        with source.preferred_language_context():
-            if source.is_player:
-                player = source.player
-                api = source.get_server().get_plugin_instance('minecraft_data_api')
-                info = api.get_player_info(player)
-                if info is None:
-                    source.reply(tr('ebm.add.get_info_fail', player))
+                if source.is_player:
+                    player = source.player
+                    api = source.get_server().get_plugin_instance('minecraft_data_api')
+                    info = api.get_player_info(player)
+                    if info is None:
+                        source.reply(tr('ebm.add.get_info_fail', player))
+                        return False
+                    if pos == 'here':
+                        try:
+                            pos = info['Pos']
+                        except:
+                            source.reply(tr('ebm.add.get_pos_fail', player))
+                            return False
+                    if view == 'here':
+                        try:
+                            view = info['Rotation']
+                        except:
+                            source.reply(tr('ebm.add.get_view_fail', player))
+                            return False
+                    if dim == 'here':
+                        try:
+                            dim = info['Dimension']
+                        except:
+                            source.reply(tr('ebm.add.get_dim_fail', player))
+                            return False
+                else:
+                    source.reply(tr('ebm.add.need_specify'))
                     return False
-                if pos is None:
-                    try:
-                        pos = info['Pos']
-                    except:
-                        source.reply(tr('ebm.add.get_pos_fail', player))
-                        return False
-                if view is None:
-                    try:
-                        view = info['Rotation']
-                    except:
-                        source.reply(tr('ebm.add.get_view_fail', player))
-                        return False
-                if dim is None:
-                    try:
-                        dim = info['Dimension']
-                    except:
-                        source.reply(tr('ebm.add.get_dim_fail', player))
-                        return False
-                bot = Bot(name, pos, view, dim, comment)
-                self.bots.append(bot)
-                source.reply(tr('ebm.add.succeed', name))
-                return True
-            else:
-                source.reply(tr('ebm.add.need_specify'))
-                return False
+        
+        bot = Bot(name, pos, view, dim, comment)
+        self.bots.append(bot)
+        with source.preferred_language_context():
+            source.reply(tr('ebm.add.succeed', name))
+        return True
 
-    def remove_bot(self, source, cmd):
+    def remove_bot(self, source: CommandSource, cmd: dict):
         name = cmd['name']
         with source.preferred_language_context():
             for b in self.bots:
@@ -231,7 +243,20 @@ class BotManager:
             source.reply(tr('ebm.bot_not_found', name))
         return False
     
-    def set_bot(self, source, cmd):
+    def remove_bot_comment(self, source: CommandSource, cmd: dict):
+        name = cmd['name']
+        for b in self.bots:
+            if b.name == name:
+                b.comment = ''
+                with source.preferred_language_context():
+                    source.reply(tr('ebm.set.succeed', name))
+                    return True
+        
+        with source.preferred_language_context():
+            source.reply(tr('ebm.bot_not_found', name))
+            return False
+    
+    def set_bot(self, source: CommandSource, cmd: dict):
         name = cmd['name']
         idx = -1
         for i, b in enumerate(self.bots):
@@ -244,65 +269,59 @@ class BotManager:
                 source.reply(tr('ebm.bot_not_found', name))
                 return False
 
-        pos = view = dim = None
-        comment = ''
-        if 'pos' in cmd:
-            pos = cmd['pos']
-        if 'view' in cmd:
-            view = cmd['view']
-        if 'dim' in cmd:
-            dim = cmd['dim']
-        if 'comment' in cmd:
-            comment = cmd['comment']
+        pos = cmd.get('pos', 'keep')
+        view = cmd.get('view', 'keep')
+        dim = cmd.get('dim', 'keep')
+        comment = cmd.get('comment', '')
 
-        if (pos is not None) and (view is not None) and (dim is not None):
-            self.bots[idx].pos = pos
-            self.bots[idx].view = view
-            self.bots[idx].dim = dim
-            if comment != '':
-                self.bots[idx].comment = comment
+        if pos == 'keep':
+            pos = self.bots[idx].pos
+        if view == 'keep':
+            view = self.bots[idx].view
+        if dim == 'keep':
+            dim = self.bots[idx].dim
+
+        if 'here' in [pos, view, dim]:
             with source.preferred_language_context():
-                source.reply(tr('ebm.set.succeed', name))
-            return True
-            
-        with source.preferred_language_context():
-            if source.is_player:
-                player = source.player
-                api = source.get_server().get_plugin_instance('minecraft_data_api')
-                info = api.get_player_info(player)
-                if info is None:
-                    source.reply(tr('ebm.add.get_info_fail', player))
+                if source.is_player:
+                    player = source.player
+                    api = source.get_server().get_plugin_instance('minecraft_data_api')
+                    info = api.get_player_info(player)
+                    if info is None:
+                        source.reply(tr('ebm.add.get_info_fail', player))
+                        return False
+                    if pos == 'here':
+                        try:
+                            pos = info['Pos']
+                        except:
+                            source.reply(tr('ebm.add.get_pos_fail', player))
+                            return False
+                    if view == 'here':
+                        try:
+                            view = info['Rotation']
+                        except:
+                            source.reply(tr('ebm.add.get_view_fail', player))
+                            return False
+                    if dim == 'here':
+                        try:
+                            dim = info['Dimension']
+                        except:
+                            source.reply(tr('ebm.add.get_dim_fail', player))
+                            return False
+                else:
+                    source.reply(tr('ebm.add.need_specify'))
                     return False
-                if pos is None:
-                    try:
-                        pos = info['Pos']
-                    except:
-                        source.reply(tr('ebm.add.get_pos_fail', player))
-                        return False
-                if view is None:
-                    try:
-                        view = info['Rotation']
-                    except:
-                        source.reply(tr('ebm.add.get_view_fail', player))
-                        return False
-                if dim is None:
-                    try:
-                        dim = info['Dimension']
-                    except:
-                        source.reply(tr('ebm.add.get_dim_fail', player))
-                        return False
-                self.bots[idx].pos = pos
-                self.bots[idx].view = view
-                self.bots[idx].dim = dim
-                if comment != '':
-                    self.bots[idx].comment = comment
-                source.reply(tr('ebm.set.succeed', name))
-                return True
-            else:
-                source.reply(tr('ebm.add.need_specify'))
-                return False
 
-    def spawn_bot(self, source, cmd):
+        self.bots[idx].pos = pos
+        self.bots[idx].view = view
+        self.bots[idx].dim = dim
+        if comment != '':
+            self.bots[idx].comment = comment
+        with source.preferred_language_context():
+            source.reply(tr('ebm.set.succeed', name))
+        return True
+
+    def spawn_bot(self, source: CommandSource, cmd: dict):
         server = source.get_server()
         if not server.is_server_startup():
             source.reply(tr('ebm.spawn.server_not_startup'))
@@ -337,7 +356,7 @@ class BotManager:
                     b.online = True
             return True
     
-    def kill_bot(self, source, cmd):
+    def kill_bot(self, source: CommandSource, cmd: dict):
         server = source.get_server()
         if not server.is_server_startup():
             source.reply(tr('ebm.kill.server_not_startup'))

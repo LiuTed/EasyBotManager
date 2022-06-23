@@ -1,13 +1,14 @@
 {
     "id": "easy_bot_manager",
-    "version": "0.1",
-    "name": "Easy-to-use Carpet Bot Manager Plugin",
+    "version": "0.2",
+    "name": "Easy Bot Manager",
+    "description": "Easy-to-use Carpet Bot Manager Plugin",
     "author": "LiuTed",
     "dependencies": {
         "mcdreforged": ">=2.0.0",
         "minecraft_data_api": ">=1.4.0"
     },
-    "archive_name": "EasyBotManager-v0.1",
+    "archive_name": "EasyBotManager-v0.2",
     "resources": [
         "lang"
     ]
